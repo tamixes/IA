@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import csv
 import math
 import random
@@ -5,32 +7,39 @@ import operator
 
 
 def loadData(file, prop):
-    """file eh o arquivo e prop a proporcao de divisao"""
+    """file é o arquivo e prop a proporção de divisao"""
     test_file = []
     training_file = []
-
+    
     with open(file, 'rb') as f:
         data = list(csv.reader(f)) 
         for linha in range(len(data)):
-            """pra cada linha no arquivo transforma o valor atual por um valor float
-                vai ate -1 pq o ultimo eh a classe"""
-            for valor in range(len(data[0])-1):
+            arquivo = data[linha]
+            arquivo_conteudo = arquivo[:-1]
+            arquivo_conteudo = map(int, arquivo_conteudo)
+            mini = min(arquivo_conteudo)
+            maxi = max(arquivo_conteudo)
+            """pra cada linha no arquivo transforma a posição 
+               atual pela normalização vai ate -1 pq o ultimo é o label"""
+            for p in range(len(arquivo_conteudo)):
                 """substitui no arquivo"""
-                data[linha][valor] = float(data[linha][valor])
-                """separa randomicamente os dados usando a proporcao passada"""
+                valor = arquivo_conteudo[p]
+                arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
+                """separa randomicamente os dados usando a proporção passada"""
+            arquivo_conteudo.append(arquivo[-1])
             if random.random() <= prop:
-                training_file.append(data[linha])
+                training_file.append(arquivo_conteudo)
             else:
-                test_file.append(data[linha])
-    """retorna as duas listas de treino e teste"""            
+                test_file.append(arquivo_conteudo)
+    """retorna as duas listas de treino e teste"""     
     return training_file, test_file
             
 
 def euclideanDistance(instance1, instance2):
-    """essa funcao recebe duas instancias para fazer o calculo da distancia
-       onde a primeira instancia eh comparada com todas as instancias da lista de treino"""
+    """essa função recebe duas instancias para fazer o calculo da distancia
+       onde a primeira instancia é comparada com todas as instancias da lista de treino"""
     distance = 0
-    """nao pega a ultima posicao pq eh o nome do treco"""
+    """não pega a ultima posicao pq é o nome do treco"""
     for element in range(len(instance2)-1):
         """vai calculando a distancia e adicionando na variavel distancia"""
         distance += pow((float(instance1[element]) - float(instance2[element])), 2)
@@ -52,11 +61,11 @@ def hamDistance(instance1, instance2):
     return distance 
 
 def getNeighbors(training_file, test_instance, k, dist):
-    """essa funcao encontra os vizinhos mais proximos da instancia de teste"""
+    """essa função encontra os vizinhos mais proximos da instancia de teste"""
     distances = []
     """percorre as linhas do arquivo de treino"""
     for linha in range(len(training_file)):
-        """calcula a distancia da instancia de treino em relacao ao conjunto de teste"""
+        """calcula a distancia da instancia de treino em relação ao conjunto de teste"""
         distance = dist(test_instance, training_file[linha])
         """armazena numa tupla contendo a instancia de teste e a distancia da instancia de treino"""
         distances.append((training_file[linha], distance))
@@ -72,7 +81,7 @@ def getNeighbors(training_file, test_instance, k, dist):
 
 
 def getResponse(neighbor):
-    """pega a lista de listas retornada pela funcao de cima"""
+    """pega a lista de listas retornada pela função de cima"""
     votes = {}
     """percorre todas as linhas da lista e pega o ultimo elemento de cada lista"""
     for linha in range(len(neighbor)):
@@ -81,7 +90,7 @@ def getResponse(neighbor):
             votes[answer] += 1
         else:
             votes[answer] = 1
-    """"dicionario onde key eh o nome e value eh o contador de ocorrencia da key
+    """"dicionario onde key é o nome e value é o contador de ocorrencia da key
         organizando o dicionario temos a key com mais votes"""
     organized_votes = sorted(votes.iteritems(), key=operator.itemgetter(1), reverse=True)
 
@@ -90,12 +99,12 @@ def getResponse(neighbor):
 
 def getAccuracy(test_file, predict):
     """compara o arquivo de teste com as predicao e retorna a % de acerto"""
-    corret = 0
+    correct = 0
 
     for linha in range(len(test_file)):
         if(test_file[linha][-1]) in predict[linha]:
-            corret += 1
-    return (corret/float(len(test_file)))*100.0
+            correct += 1
+    return (correct/float(len(test_file)))*100.0
 
 ##################################################### MAIN ###########################################
 def main():
@@ -108,10 +117,10 @@ def main():
     print("Conjunto de teste: " + repr(len(teste)))
 
     predicoes = []
-    k = 1
+    k = 5
 
     for linha in range(len(teste)):
-        vizinhos = getNeighbors(treino, teste[linha], k, hamDistance)
+        vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
         resultado = getResponse(vizinhos)
         predicoes.append(resultado)
         print("PREDICAO:"+repr(resultado) + 'ATUAL:'+repr(teste[linha][-1]))
