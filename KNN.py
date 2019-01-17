@@ -27,7 +27,7 @@ def loadData(file, prop):
                 arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
                 """separa randomicamente os dados usando a proporção passada"""
             arquivo_conteudo.append(arquivo[-1])
-            if random.random() <= prop:
+            if random.random() < prop:
                 training_file.append(arquivo_conteudo)
             else:
                 test_file.append(arquivo_conteudo)
@@ -109,9 +109,9 @@ def getAccuracy(test_file, predict):
 ##################################################### MAIN ###########################################
 def main():
 
-    proporcao = 0.67
+    proporcao = 0.66
 
-    treino, teste =  loadData("dados.csv", proporcao)
+    treino, teste =  loadData("DATA_BASE.csv", proporcao)
 
     print("Conjunto de treio: " + repr(len(treino)))
     print("Conjunto de teste: " + repr(len(teste)))
@@ -123,7 +123,7 @@ def main():
         vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
         resultado = getResponse(vizinhos)
         predicoes.append(resultado)
-        print("PREDICAO:"+repr(resultado) + 'ATUAL:'+repr(teste[linha][-1]))
+        print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
     precisao = getAccuracy(teste, predicoes)
     print("PRECISAO: " + repr(precisao  ) + '%')
 
