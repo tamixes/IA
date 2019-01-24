@@ -2,6 +2,7 @@
 
 import csv
 import math
+import numpy as np
 from  decimal import Decimal
 import random 
 from random import randrange
@@ -189,6 +190,20 @@ def getAccuracy(test_file, predict):
     return (correct/float(len(test_file)))*100.0
 
 
+def f1_score_single(atual, predicao):
+    atual = set(atual)
+    predicao = set(predicao)
+    cross_size = len(atual & predicao)
+    if cross_size == 0: return 0.
+    p = 1. * cross_size / len(predicao)
+    r = 1. * cross_size / len(atual)
+    return 2 * p * r / (p + r)
+    
+
+def f1_score(atual, predicao):
+    return np.mean([f1_score_single(x, y) for x, y in zip(atual, predicao)])
+
+
 ##################################################### MAIN ###########################################
 def main():
 
@@ -204,7 +219,7 @@ def main():
     k = 3
 
     for linha in range(len(teste)):
-        vizinhos = getNeighbors(treino, teste[linha], k, cossenoDistance)
+        vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
         resultado = getResponse(vizinhos)
         predicoes.append(resultado)
         atual = teste[linha][-1]
@@ -212,7 +227,9 @@ def main():
         print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
         
     precisao = getAccuracy(teste, predicoes)
-    print("\nPRECISAO: " + repr(precisao  ) + '%\n\n')
+    print("\nPRECISAO: " + repr(precisao) + '%\n\n')
+    measure = f1_score(a, predicoes)
+    print("\nF-MEASURE: " + repr(measure) + '%\n\n')
     unique, matrix = confusion_matrix(a, predicoes)
     print_confusion_matrix(unique, matrix)
 
