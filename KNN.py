@@ -91,9 +91,11 @@ def minkowski_distance(instance1, instance2, p_value):
 
 
 def cross_validation(file, folds, randomize = False):
-  test_file = []
-  training_file = []
-  with open(file, 'rb') as f:
+    """file é o arquivo e prop a proporção de divisao"""
+    test_file = []
+    training_file = []
+    
+    with open(file, 'rb') as f:
         data = list(csv.reader(f)) 
         for linha in range(len(data)):
             arquivo = data[linha]
@@ -101,10 +103,14 @@ def cross_validation(file, folds, randomize = False):
             arquivo_conteudo = map(int, arquivo_conteudo)
             mini = min(arquivo_conteudo)
             maxi = max(arquivo_conteudo)
-            for p in range(len(arquivo_conteudo)): 
+            """pra cada linha no arquivo transforma a posição 
+               atual pela normalização vai ate -1 pq o ultimo é o label"""
+            for p in range(len(arquivo_conteudo)):
+                """substitui no arquivo"""
                 valor = arquivo_conteudo[p]
                 arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
-            arquivo_conteudo.append(arquivo[-1])
+                """separa randomicamente os dados usando a proporção passada"""
+            arquivo_conteudo.append(arquivo[-1])  
             if randomize:
                 f = arquivo_conteudo
                 shuffle(f)
@@ -114,8 +120,7 @@ def cross_validation(file, folds, randomize = False):
                 training_file = [f
                     for s in slices if s is not test_file
                     for f in s]
-            
-            return training_file, test_file 
+            return training_file, test_file
             
 
 def confusion_matrix(actual, predicted):
@@ -204,6 +209,8 @@ def f1_score(atual, predicao):
     return np.mean([f1_score_single(x, y) for x, y in zip(atual, predicao)])
 
 
+ 
+
 ##################################################### MAIN ###########################################
 def main():
 
@@ -237,19 +244,31 @@ def main_validation():
    
     seed(1)
     data = "DATA_BASE.csv"
-    cross_validation(data, 3, True)
-   
-    # for linha in range(len(teste)):
-    #     vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
-    #     resultado = getResponse(vizinhos)
-    #     predicoes.append(resultado)
-    #     print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
-    # precisao = getAccuracy(teste, predicoes)
-    # print("PRECISAO: " + repr(precisao  ) + '%')
-   
+    treino, teste = cross_validation(data, 5, True)
+    print("Conjunto de treio: " + repr(len(treino)))
+    print("Conjunto de teste: " + repr(len(teste))+"\n")
+
+    predicoes = []
+    a = []
+    k = 3
+
+    for linha in range(len(teste)):
+        vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
+        resultado = getResponse(vizinhos)
+        predicoes.append(resultado)
+        print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
+    precisao = getAccuracy(teste, predicoes)
+    print("PRECISAO: " + repr(precisao  ) + '%')
+    print("\nPRECISAO: " + repr(precisao) + '%\n\n')
+    measure = f1_score(a, predicoes)
+    print("\nF-MEASURE: " + repr(measure) + '%\n\n')
+    unique, matrix = confusion_matrix(a, predicoes)
+    print_confusion_matrix(unique, matrix)
 
     
 
 
 ########################################## CHAMADA DO MAIN ############################################
+
+# main_validation()
 main()
