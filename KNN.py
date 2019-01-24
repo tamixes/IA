@@ -2,7 +2,11 @@
 
 import csv
 import math
-import random
+from  decimal import Decimal
+import random 
+from random import randrange
+from random import seed
+from random import shuffle
 import operator
 
 
@@ -53,12 +57,90 @@ def manhattanDistance(instance1, instance2):
         distance += (float(instance1[element]) - float(instance2[element]))
     return distance
 
+
 def hamDistance(instance1, instance2):
     distance = 0
     for element in range(len(instance2)-1):
         if instance1[element] != instance2[element]:
             distance += 1
     return distance 
+
+
+def cossenoDistance(instance1, instance2):
+    xx, xy, yy = 0, 0, 0
+
+    for element in range(len(instance2)-1):
+        x = instance1[element]; y = instance2[element]
+        xx += x*x
+        yy += y*y
+        xy += x*y
+    return xy/math.sqrt(xx*yy)
+
+
+def nth_root(value, n_root):
+ 
+    root_value = 1/float(n_root)
+    return round (Decimal(value) ** Decimal(root_value),3)
+ 
+
+def minkowski_distance(instance1, instance2, p_value):
+    distance = 0
+    distance += nth_root(sum(pow(abs(a-b),p_value) for a,b in zip(instance1, instance2)),p_value)
+    return distance
+
+
+def cross_validation(file, folds, randomize = False):
+  test_file = []
+  training_file = []
+  with open(file, 'rb') as f:
+        data = list(csv.reader(f)) 
+        for linha in range(len(data)):
+            arquivo = data[linha]
+            arquivo_conteudo = arquivo[:-1]
+            arquivo_conteudo = map(int, arquivo_conteudo)
+            mini = min(arquivo_conteudo)
+            maxi = max(arquivo_conteudo)
+            for p in range(len(arquivo_conteudo)): 
+                valor = arquivo_conteudo[p]
+                arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
+            arquivo_conteudo.append(arquivo[-1])
+            if randomize:
+                f = arquivo_conteudo
+                shuffle(f)
+            slices = [f[i::folds] for i in xrange(folds)] 
+            for i in xrange(folds): 
+                test_file = slices[i]
+                training_file = [f
+                    for s in slices if s is not test_file
+                    for f in s]
+            
+            return training_file, test_file 
+            
+
+def confusion_matrix(actual, predicted):
+	unique = set(actual)
+	matrix = [list() for x in range(len(unique))]
+	for i in range(len(unique)):
+		matrix[i] = [0 for x in range(len(unique))]
+	lookup = dict()
+	for i, value in enumerate(unique):
+		lookup[value] = i
+	for i in range(len(actual)):
+		x = lookup[actual[i]]
+		y = lookup[predicted[i]]
+		matrix[y][x] += 1
+	return unique, matrix
+
+
+def print_confusion_matrix(unique, matrix):
+    #A é o valor atual, P o valor da predição
+
+	print('******MATRIZ DE CONFUSÃO******\n\n(A)' + ' '.join(str(x) for x in unique))
+	print('(P)---------------------')
+	for i, x in enumerate(unique):
+		print("%s | %s" % (x, ' '.join(str(x) for x in matrix[i])))
+        print('\n*********FIM DA MATRIZ*********')
+
 
 def getNeighbors(training_file, test_instance, k, dist):
     """essa função encontra os vizinhos mais proximos da instancia de teste"""
@@ -106,27 +188,50 @@ def getAccuracy(test_file, predict):
             correct += 1
     return (correct/float(len(test_file)))*100.0
 
+
 ##################################################### MAIN ###########################################
 def main():
 
     proporcao = 0.66
-
+ 
     treino, teste =  loadData("DATA_BASE.csv", proporcao)
 
     print("Conjunto de treio: " + repr(len(treino)))
-    print("Conjunto de teste: " + repr(len(teste)))
+    print("Conjunto de teste: " + repr(len(teste))+"\n")
 
     predicoes = []
-    k = 5
+    a = []
+    k = 3
 
     for linha in range(len(teste)):
-        vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
+        vizinhos = getNeighbors(treino, teste[linha], k, cossenoDistance)
         resultado = getResponse(vizinhos)
         predicoes.append(resultado)
+        atual = teste[linha][-1]
+        a.append(atual)
         print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
+        
     precisao = getAccuracy(teste, predicoes)
-    print("PRECISAO: " + repr(precisao  ) + '%')
+    print("\nPRECISAO: " + repr(precisao  ) + '%\n\n')
+    unique, matrix = confusion_matrix(a, predicoes)
+    print_confusion_matrix(unique, matrix)
 
+def main_validation():
+   
+    seed(1)
+    data = "DATA_BASE.csv"
+    cross_validation(data, 3, True)
+   
+    # for linha in range(len(teste)):
+    #     vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
+    #     resultado = getResponse(vizinhos)
+    #     predicoes.append(resultado)
+    #     print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
+    # precisao = getAccuracy(teste, predicoes)
+    # print("PRECISAO: " + repr(precisao  ) + '%')
+   
+
+    
 
 
 ########################################## CHAMADA DO MAIN ############################################
