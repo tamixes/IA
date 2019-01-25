@@ -11,10 +11,11 @@ from random import shuffle
 import operator
 
 
-def loadData(file, prop):
-    """file é o arquivo e prop a proporção de divisao"""
-    test_file = []
-    training_file = []
+def loadData(file):
+    # """file é o arquivo e prop a proporção de divisao"""
+    # test_file = []
+    # training_file = []
+    arquivo_conteudo = []
     
     with open(file, 'rb') as f:
         data = list(csv.reader(f)) 
@@ -32,12 +33,12 @@ def loadData(file, prop):
                 arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
                 """separa randomicamente os dados usando a proporção passada"""
             arquivo_conteudo.append(arquivo[-1])
-            if random.random() < prop:
-                training_file.append(arquivo_conteudo)
-            else:
-                test_file.append(arquivo_conteudo)
-    """retorna as duas listas de treino e teste"""     
-    return training_file, test_file
+    #         if random.random() < prop:
+    #             training_file.append(arquivo_conteudo)
+    #         else:
+    #             test_file.append(arquivo_conteudo)
+    # """retorna as duas listas de treino e teste"""     
+    return arquivo_conteudo #training_file, test_file
             
 
 def euclideanDistance(instance1, instance2):
@@ -89,38 +90,57 @@ def minkowski_distance(instance1, instance2, p_value):
     distance += nth_root(sum(pow(abs(a-b),p_value) for a,b in zip(instance1, instance2)),p_value)
     return distance
 
+def train_test_split(dataset, prop):
+    train = list()
+    train_size = prop * len(dataset)
+    teste = list(dataset)
+    while len(train) < train_size:
+	    index = randrange(len(teste))
+	    train.append(teste.pop(index))
+    return train, teste
 
-def cross_validation(file, folds, randomize = False):
-    """file é o arquivo e prop a proporção de divisao"""
-    test_file = []
-    training_file = []
+def cross_validation(dataset, folds):
+
+    dataset_split = list()
+    dataset_copy = list(dataset)
+    fold_size = int(len(dataset) / folds)
+    for i in range(folds):
+	    fold = list()
+	    while len(fold) < fold_size:
+		    index = randrange(len(dataset_copy))
+		    fold.append(dataset_copy.pop(index))
+	    dataset_split.append(fold)
+    return dataset_split
+    # """file é o arquivo e prop a proporção de divisao"""
+    # test_file = []
+    # training_file = []
     
-    with open(file, 'rb') as f:
-        data = list(csv.reader(f)) 
-        for linha in range(len(data)):
-            arquivo = data[linha]
-            arquivo_conteudo = arquivo[:-1]
-            arquivo_conteudo = map(int, arquivo_conteudo)
-            mini = min(arquivo_conteudo)
-            maxi = max(arquivo_conteudo)
-            """pra cada linha no arquivo transforma a posição 
-               atual pela normalização vai ate -1 pq o ultimo é o label"""
-            for p in range(len(arquivo_conteudo)):
-                """substitui no arquivo"""
-                valor = arquivo_conteudo[p]
-                arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
-                """separa randomicamente os dados usando a proporção passada"""
-            arquivo_conteudo.append(arquivo[-1])  
-            if randomize:
-                f = arquivo_conteudo
-                shuffle(f)
-            slices = [f[i::folds] for i in xrange(folds)] 
-            for i in xrange(folds): 
-                test_file = slices[i]
-                training_file = [f
-                    for s in slices if s is not test_file
-                    for f in s]
-            return training_file, test_file
+    # with open(file, 'rb') as f:
+    #     data = list(csv.reader(f)) 
+    #     for linha in range(len(data)):
+    #         arquivo = data[linha]
+    #         arquivo_conteudo = arquivo[:-1]
+    #         arquivo_conteudo = map(int, arquivo_conteudo)
+    #         mini = min(arquivo_conteudo)
+    #         maxi = max(arquivo_conteudo)
+    #         """pra cada linha no arquivo transforma a posição 
+    #            atual pela normalização vai ate -1 pq o ultimo é o label"""
+    #         for p in range(len(arquivo_conteudo)):
+    #             """substitui no arquivo"""
+    #             valor = arquivo_conteudo[p]
+    #             arquivo_conteudo[p] = (valor - mini)/float(maxi-mini)
+    #             """separa randomicamente os dados usando a proporção passada"""
+    #         arquivo_conteudo.append(arquivo[-1])  
+    #         if randomize:
+    #             f = arquivo_conteudo
+    #             shuffle(f)
+    #         slices = [f[i::folds] for i in xrange(folds)] 
+    #         for i in xrange(folds): 
+    #             test_file = slices[i]
+    #             training_file = [f
+    #                 for s in slices if s is not test_file
+    #                 for f in s]
+    #         return training_file, test_file
             
 
 def confusion_matrix(actual, predicted):
@@ -244,8 +264,12 @@ def main_validation():
    
     seed(1)
     data = "DATA_BASE.csv"
-    treino, teste = cross_validation(data, 5, True)
-    print("Conjunto de treio: " + repr(len(treino)))
+    dados = loadData(data)
+    proporcao = 0.66
+    cruzado = cross_validation(dados, 10)
+    treino, teste = train_test_split(cruzado, proporcao)
+
+    print("Conjunto de treino: " + repr(len(treino)))
     print("Conjunto de teste: " + repr(len(teste))+"\n")
 
     predicoes = []
@@ -253,7 +277,7 @@ def main_validation():
     k = 3
 
     for linha in range(len(teste)):
-        vizinhos = getNeighbors(treino, teste[linha], k, euclideanDistance)
+        vizinhos = getNeighbors(treino, teste[linha], k, manhattanDistance)
         resultado = getResponse(vizinhos)
         predicoes.append(resultado)
         print("PREDICAO:"+repr(resultado) + ' ATUAL:'+repr(teste[linha][-1]))
@@ -270,5 +294,5 @@ def main_validation():
 
 ########################################## CHAMADA DO MAIN ############################################
 
-# main_validation()
-main()
+main_validation()
+#main()
